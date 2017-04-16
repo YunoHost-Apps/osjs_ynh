@@ -1,0 +1,72 @@
+#!/bin/bash
+
+source .fonctions
+set -eu
+#=================================================
+# MANAGE FAILURE OF THE SCRIPT
+#=================================================
+
+ynh_check_error	# Active trap pour arrêter le script si une erreur est détectée.
+
+# Retrieve arguments
+domain=$YNH_APP_ARG_DOMAIN
+path=$YNH_APP_ARG_PATH
+is_public=$YNH_APP_ARG_IS_PUBLIC
+port=400
+
+app=$YNH_APP_INSTANCE_NAME
+
+# Source app helpers
+source /usr/share/yunohost/helpers
+
+script_dir=$PWD
+
+# Vérifie que les variables ne sont pas vides.
+CHECK_DOMAINPATH	# Vérifie la disponibilité du path et du domaine.
+path=$(ynh_normalize_url_path $path)	# Vérifie et corrige la syntaxe du path.
+CHECK_FINALPATH	# Vérifie que le dossier de destination n'est pas déjà utilisé.
+
+# Install dependency to convert tracks to a readable format for the browser
+sudo cp -a ../conf/os.js.list /etc/apt/sources.list.d/
+
+sudo apt-get update
+sudo apt-get -t stretch -y -qq install nodejs-legacy nodejs npm
+check_or_install_npm
+
+# Source YunoHost helpers
+source /usr/share/yunohost/helpers
+
+# Copy files to the right place
+final_path=/var/www/$app
+extract_source
+
+# Files owned by root, www-data can just read
+sudo chown www-data:www-data $final_path -R
+sudo chmod 755 $final_path -R
+
+# Modify Nginx configuration file and copy it to Nginx conf directory
+sed -i "s@__PORT__@$port@g" ../conf/nginx.conf
+sed -i "s@__PORT__@$port@g" ../conf/os.js.service
+sed -i "s@__FINALPATH__@$final_path@g" ../conf/os.js.service
+nginxconf=/etc/nginx/conf.d/$domain.d/$app.conf
+sudo cp ../conf/nginx.conf $nginxconf
+sudo chown root: $nginxconf
+sudo chmod 600 $nginxconf
+pushd $final_path
+sudo npm install --production
+sudo node osjs build
+popd
+sudo yunohost firewall allow Both $port
+sudo systemctl start "$app".service
+
+
+
+ynh_app_setting_set "$app" is_public "$is_public"
+if [ "$is_public" = 0 ];
+then
+  ynh_app_setting_set "$app" unprotected_uris "/"
+fi
+
+sudo service nginx reload
+sudo yunohost service add "$app" --log /var/log/"$app"/"$app".log
+sudo yunohost app ssowatconf
