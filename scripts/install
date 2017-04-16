@@ -56,6 +56,7 @@ pushd $final_path
 sudo npm install --production
 sudo node osjs build
 popd
+pre_inst_os.js
 sudo yunohost firewall allow Both $port
 sudo systemctl start "$app".service
 
