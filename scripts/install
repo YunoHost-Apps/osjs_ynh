@@ -11,7 +11,7 @@ ynh_check_error	# Active trap pour arrêter le script si une erreur est détect�
 
 # Retrieve arguments
 domain=$YNH_APP_ARG_DOMAIN
-path=$YNH_APP_ARG_PATH
+path=/
 is_public=$YNH_APP_ARG_IS_PUBLIC
 port=400
 
