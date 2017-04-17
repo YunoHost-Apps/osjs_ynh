@@ -20,7 +20,6 @@ script_dir=$PWD
 
 # Vérifie que les variables ne sont pas vides.
 CHECK_DOMAINPATH	# Vérifie la disponibilité du path et du domaine.
-path=$(ynh_normalize_url_path $path)	# Vérifie et corrige la syntaxe du path.
 CHECK_FINALPATH	# Vérifie que le dossier de destination n'est pas déjà utilisé.
 
 # Install dependency to convert tracks to a readable format for the browser
