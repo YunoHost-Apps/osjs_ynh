@@ -15,10 +15,10 @@
 		multi_instance=0
 		wrong_user=0
 		wrong_path=1
-		incorrect_path=1
+		incorrect_path=0
 		corrupt_source=0
 		fail_download_source=0
-		port_already_use=0
+		port_already_use=1
 		final_path_already_use=0
 ;;; Levels
 	Level 1=auto
