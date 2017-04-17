@@ -24,7 +24,7 @@ path=$(ynh_normalize_url_path $path)	# Vérifie et corrige la syntaxe du path.
 CHECK_FINALPATH	# Vérifie que le dossier de destination n'est pas déjà utilisé.
 
 # Install dependency to convert tracks to a readable format for the browser
-sudo cp -a ../conf/os.js.list /etc/apt/sources.list.d/
+sudo cp -a ../conf/osjs.list /etc/apt/sources.list.d/
 sudo apt-get update
 sudo apt-get -t stretch -y -qq install nodejs-legacy nodejs npm
 
@@ -38,8 +38,8 @@ sudo chmod 755 $final_path -R
 
 # Modify Nginx configuration file and copy it to Nginx conf directory
 sed -i "s@__PORT__@$port@g" ../conf/nginx.conf
-sed -i "s@__PORT__@$port@g" ../conf/os.js.service
-sed -i "s@__FINALPATH__@$final_path@g" ../conf/os.js.service
+sed -i "s@__PORT__@$port@g" ../conf/osjs.service
+sed -i "s@__FINALPATH__@$final_path@g" ../conf/osjs.service
 nginxconf=/etc/nginx/conf.d/$domain.d/$app.conf
 sudo cp ../conf/nginx.conf $nginxconf
 sudo chown root: $nginxconf
