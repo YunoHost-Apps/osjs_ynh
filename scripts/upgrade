@@ -13,7 +13,7 @@ app=$YNH_APP_INSTANCE_NAME
 
 # Retrieve arguments
 domain=$(ynh_app_setting_get "$app" domain)
-path=$(ynh_app_setting_get "$app" path)
+path=/
 is_public=$(ynh_app_setting_get "$app" is_public)
 
 # Install the app
