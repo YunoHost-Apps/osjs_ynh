@@ -1,7 +1,8 @@
 #!/bin/bash
 
-source .fonctions
 set -eu
+source .fonctions
+source /usr/share/yunohost/helpers
 #=================================================
 # MANAGE FAILURE OF THE SCRIPT
 #=================================================
@@ -15,10 +16,6 @@ is_public=$YNH_APP_ARG_IS_PUBLIC
 port=400
 
 app=$YNH_APP_INSTANCE_NAME
-
-# Source app helpers
-source /usr/share/yunohost/helpers
-
 script_dir=$PWD
 
 # Vérifie que les variables ne sont pas vides.
@@ -28,13 +25,8 @@ CHECK_FINALPATH	# Vérifie que le dossier de destination n'est pas déjà utilis
 
 # Install dependency to convert tracks to a readable format for the browser
 sudo cp -a ../conf/os.js.list /etc/apt/sources.list.d/
-
 sudo apt-get update
 sudo apt-get -t stretch -y -qq install nodejs-legacy nodejs npm
-check_or_install_npm
-
-# Source YunoHost helpers
-source /usr/share/yunohost/helpers
 
 # Copy files to the right place
 final_path=/var/www/$app
