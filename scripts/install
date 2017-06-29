@@ -129,9 +129,8 @@ sudo chmod 600 $nginxconf
 pushd $final_path
 ynh_use_nodejs
 sudo_path npm install --production >> $install_log 2>&1
-sudo node osjs build
+sudo_path node osjs build
 popd
-pre_inst_os.js
 sudo yunohost firewall allow Both $port
 sudo systemctl start "$app".service
 
