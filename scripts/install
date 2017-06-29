@@ -114,13 +114,15 @@ sudo chmod 755 $final_path -R
 #=================================================
 # Modify Nginx configuration file and copy it to Nginx conf directory
 #=================================================
-ynh_replace_string "__PORT__" "$port" "../conf/nginx.conf"
-ynh_replace_string "__PORT__" "$port" "../conf/osjs.service"
-ynh_replace_string "__FINALPATH__" "$final_path" "../conf/osjs.service"
+
+ynh_nginx_config
 nginxconf=/etc/nginx/conf.d/$domain.d/$app.conf
-sudo cp ../conf/nginx.conf $nginxconf
 sudo chown root: $nginxconf
 sudo chmod 600 $nginxconf
+ynh_systemd_config
+ynh_replace_string "__NODEJS__" "$nodejs_use_version" "/etc/systemd/system/$app.service"
+ynh_replace_string "__ENV_PATH__" "$PATH" "/etc/systemd/system/$app.service"
+ynh
 
 #=================================================
 # Install OSjs
