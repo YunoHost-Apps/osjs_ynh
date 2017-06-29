@@ -132,6 +132,14 @@ sudo_path npm install --production >> $install_log 2>&1
 sudo_path node osjs build
 popd
 sudo yunohost firewall allow Both $port
+
+#=================================================
+# Configure init script
+#=================================================
+
+sudo cp ../conf/"$app".service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable "$app".service
 sudo systemctl start "$app".service
 
 #=================================================
