@@ -74,6 +74,30 @@ ynh_app_setting_set $app port $port
 ynh_install_nodejs 7
 
 #=================================================
+# CREATE DEDICATED USER
+#=================================================
+
+ynh_system_user_create $app /home/$app	# Créer un utilisateur système dédié à l'app
+
+#=================================================
+# SPECIFIC SETUP
+#=================================================
+# HANDLE LOG FILES AND LOGROTATE
+#=================================================
+
+# Créer le dossier de log
+sudo mkdir -p /var/log/$app
+sudo touch /var/log/$app/etherpad.log
+install_log=/var/log/$app/installation.log
+sudo touch $install_log
+sudo chown $app -R /var/log/$app
+sudo chown admin -R $install_log
+
+# Configuration de logrotate
+ynh_use_logrotate
+
+
+#=================================================
 # Copy files to the right place
 #=================================================
 
@@ -103,7 +127,8 @@ sudo chmod 600 $nginxconf
 #=================================================
 
 pushd $final_path
-sudo npm install --production
+ynh_use_nodejs
+sudo_path npm install --production >> $install_log 2>&1
 sudo node osjs build
 popd
 pre_inst_os.js
