@@ -1,62 +1,153 @@
 #!/bin/bash
 
 set -eu
-source .fonctions
+
+#=================================================
+# GENERIC STARTING
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
 source /usr/share/yunohost/helpers
+
 #=================================================
 # MANAGE FAILURE OF THE SCRIPT
 #=================================================
 
-ynh_check_error	# Active trap pour arrêter le script si une erreur est détectée.
+ynh_clean_setup () {
+# Nettoyage des résidus d'installation non pris en charge par le script remove.
+	if test -n "$PID_TAIL"
+	then
+		SUPPRESS_WARNING kill -s 15 $PID_TAIL	# Arrête l'exécution de tail.
+		ynh_secure_remove "$tempfile"
+	fi
+	echo ""
+}
+ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
 
-# Retrieve arguments
+#=================================================
+# RETRIEVE ARGUMENTS FROM THE MANIFEST
+#=================================================
+
 domain=$YNH_APP_ARG_DOMAIN
-path=""
 is_public=$YNH_APP_ARG_IS_PUBLIC
-port=400
+path_url="" # Assure la compatibilité avec les fonctions utilisant $path_url
 
 app=$YNH_APP_INSTANCE_NAME
-script_dir=$PWD
 
-# Vérifie que les variables ne sont pas vides.
+#=================================================
+# CHECK IF THE APP CAN BE INSTALLED WITH THIS ARGS
+#=================================================
+
+if sudo yunohost domain list | grep -q $domain	# Vérifie la liste des domaines
+then	# Si le domaine existe dans Yunohost
+	if sudo yunohost app map | grep -q $domain	# Vérifie la liste des apps par domaine
+	then 	# Si une app est installée sur ce domaine.
+		WARNING echo "An app is already installed on the domain $domain. Mypads needs a whole domain or subdomain to himself."
+	fi
+fi
+
 CHECK_DOMAINPATH	# Vérifie la disponibilité du path et du domaine.
 CHECK_FINALPATH	# Vérifie que le dossier de destination n'est pas déjà utilisé.
 
-# Install dependency to convert tracks to a readable format for the browser
-sudo curl -sL https://deb.nodesource.com/setup_7.x | sudo bash -
-sudo apt-get install -yy -qq nodejs
+#=================================================
+# STORE SETTINGS FROM MANIFEST
+#=================================================
 
+ynh_app_setting_set $app domain $domain
+ynh_app_setting_set $app is_public $is_public
+
+#=================================================
+# STANDARD MODIFICATIONS
+#=================================================
+# FIND AND OPEN A PORT
+#=================================================
+
+port=$(ynh_find_port 400)	# Cherche un port libre.
+ynh_app_setting_set $app port $port
+
+#=================================================
+# INSTALL NODEJS
+#=================================================
+
+ynh_install_nodejs 7
+
+#=================================================
+# CREATE DEDICATED USER
+#=================================================
+
+ynh_system_user_create $app /home/$app	# Créer un utilisateur système dédié à l'app
+
+#=================================================
+# SPECIFIC SETUP
+#=================================================
+# HANDLE LOG FILES AND LOGROTATE
+#=================================================
+
+# Créer le dossier de log
+sudo mkdir -p /var/log/$app
+sudo touch /var/log/$app/etherpad.log
+install_log=/var/log/$app/installation.log
+sudo touch $install_log
+sudo chown $app -R /var/log/$app
+sudo chown admin -R $install_log
+
+# Configuration de logrotate
+ynh_use_logrotate
+
+
+#=================================================
 # Copy files to the right place
+#=================================================
+
 final_path=/var/www/$app
 extract_source
 
+#=================================================
 # Files owned by root, www-data can just read
+#=================================================
+
 sudo chown www-data:www-data $final_path -R
 sudo chmod 755 $final_path -R
 
+#=================================================
 # Modify Nginx configuration file and copy it to Nginx conf directory
-sed -i "s@__PORT__@$port@g" ../conf/nginx.conf
-sed -i "s@__PORT__@$port@g" ../conf/osjs.service
-sed -i "s@__FINALPATH__@$final_path@g" ../conf/osjs.service
+#=================================================
+ynh_replace_string "__PORT__" "$port" "../conf/nginx.conf"
+ynh_replace_string "__PORT__" "$port" "../conf/osjs.service"
+ynh_replace_string "__FINALPATH__" "$final_path" "../conf/osjs.service"
 nginxconf=/etc/nginx/conf.d/$domain.d/$app.conf
 sudo cp ../conf/nginx.conf $nginxconf
 sudo chown root: $nginxconf
 sudo chmod 600 $nginxconf
+
+#=================================================
+# Install OSjs
+#=================================================
+
 pushd $final_path
-sudo npm install --production
+ynh_use_nodejs
+sudo_path npm install --production >> $install_log 2>&1
 sudo node osjs build
 popd
 pre_inst_os.js
 sudo yunohost firewall allow Both $port
 sudo systemctl start "$app".service
 
-
+#=================================================
+# Set Public or private
+#=================================================
 
 ynh_app_setting_set "$app" is_public "$is_public"
 if [ "$is_public" = 0 ];
 then
   ynh_app_setting_set "$app" unprotected_uris "/"
 fi
+
+#=================================================
+# Reload Service
+#=================================================
 
 sudo service nginx reload
 sudo yunohost service add "$app" --log /var/log/"$app"/"$app".log
