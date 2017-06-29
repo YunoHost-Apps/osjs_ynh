@@ -23,9 +23,8 @@ CHECK_DOMAINPATH	# Vérifie la disponibilité du path et du domaine.
 CHECK_FINALPATH	# Vérifie que le dossier de destination n'est pas déjà utilisé.
 
 # Install dependency to convert tracks to a readable format for the browser
-sudo cp -a ../conf/osjs.list /etc/apt/sources.list.d/
-sudo apt-get update
-sudo apt-get -t stretch -y -qq install nodejs-legacy nodejs npm
+sudo curl -sL https://deb.nodesource.com/setup_7.x | sudo bash -
+sudo apt-get install -yy -qq nodejs
 
 # Copy files to the right place
 final_path=/var/www/$app
