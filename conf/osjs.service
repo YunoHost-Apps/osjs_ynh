@@ -1,15 +1,16 @@
 [Unit]
 Description=OS.js is a web-desktop written in Nodejs and javascript. 
-After=syslog.target
 After=network.target
+
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=__FINALPATH__
-ExecStart=/usr/bin/node osjs run --port=__PORT__
+User=__APP__
+Group=__APP__
+ExecStartPre=__NODEJS__
+Environment="PATH=__ENV_PATH__"
+ExecStart=sudo env "PATH=$PATH" $@;node osjs run --port=__PORT__
 Restart=always
-Environment=USER=osjs HOME=__FINALPATH__
 
 [Install]
 WantedBy=multi-user.target
