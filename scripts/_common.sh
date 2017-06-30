@@ -79,6 +79,7 @@ ynh_systemd_config () {
 	if test -n "${app:-}"; then
 		ynh_replace_string "__APP__" "$app" "$finalsystemdconf"
 	fi
+        ynh_replace_string "__PORT__" "$port" "$finalsystemdconf"
 	ynh_store_file_checksum "$finalsystemdconf"
 
 	sudo chown root: "$finalsystemdconf"
