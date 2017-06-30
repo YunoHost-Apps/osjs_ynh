@@ -10,7 +10,7 @@ Group=__APP__
 WorkingDirectory=__FINALPATH__
 ExecStartPre=__NODEJS__
 Environment="PATH=__ENV_PATH__"
-ExecStart=/usr/bin/env node osjs run --port=__PORT__
+ExecStart=node osjs run --port=__PORT__
 Restart=always
 
 [Install]
