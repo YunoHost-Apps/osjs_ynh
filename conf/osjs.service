@@ -9,7 +9,7 @@ User=__APP__
 Group=__APP__
 ExecStartPre=__NODEJS__
 Environment="PATH=__ENV_PATH__"
-ExecStart=sudo env "PATH=$PATH" $@;node osjs run --port=__PORT__
+ExecStart=/usr/bin/node osjs run --port=__PORT__
 Restart=always
 
 [Install]
