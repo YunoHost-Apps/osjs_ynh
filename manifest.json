@@ -4,14 +4,14 @@
     "packaging_format": 1,
     "description": {
         "en": "Desktop you have accesss through your browser",
-	      "fr": "Bureau accessible à travers votre navigateur"
+	"fr": "Bureau accessible à travers votre navigateur"
     },
     "url": "https://www.os-js.org/",
     "license": "MIT",
     "maintainer": {
         "name": "frju365",
         "email": "win10@tutanota.com",
-        "url": "https://github.com/Yunohost-Apps/os.js_ynh"
+        "url": "https://github.com/Yunohost-Apps/osjs_ynh"
     },
     "requirements": {
         "yunohost": ">> 2.4.0"
