@@ -142,7 +142,6 @@ sudo yunohost firewall allow Both $port
 sudo systemctl daemon-reload
 sudo systemctl enable "$app".service
 sudo systemctl start "$app".service
-sudo systemctl status "$app".service
 
 #=================================================
 # Set Public or private
