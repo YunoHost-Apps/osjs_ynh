@@ -1,0 +1,3 @@
+SOURCE_URL=https://github.com/os-js/OS.js/archive/v2.0.0-97.tar.gz
+SOURCE_SUM=e48c016033554e17ac91a73cc62cc43e
+SOURCE_SUM_PRG=md5sum

@@ -102,7 +102,8 @@ ynh_use_logrotate
 #=================================================
 
 final_path=/var/www/$app
-extract_source
+ynh_app_setting_set $app final_path $final_path
+ynh_setup_source $final_path
 
 #=================================================
 # Files owned by root, www-data can just read
