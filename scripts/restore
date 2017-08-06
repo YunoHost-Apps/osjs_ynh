@@ -1,36 +1,91 @@
 #!/bin/bash
 
+# Exit on command errors and treat unset variables as an error
 set -eu
-# Récupère les infos de l'application.
-app=$YNH_APP_INSTANCE_NAME
 
-# Source app helpers
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+if [ ! -e _common.sh ]; then
+	# Fetch helpers file if not in current directory
+	sudo cp ../settings/scripts/_common.sh ./_common.sh
+	sudo chmod a+rx _common.sh
+fi
+source _common.sh
 source /usr/share/yunohost/helpers
 
-final_path=$(ynh_app_setting_get $app final_path)
+#=================================================
+# LOAD SETTINGS
+#=================================================
+
+app=$YNH_APP_INSTANCE_NAME
+
 domain=$(ynh_app_setting_get $app domain)
+path_url=$(ynh_app_setting_get $app path)
+is_public=$(ynh_app_setting_get $app is_public)
+final_path=$(ynh_app_setting_get $app final_path)
 
-# The parameter $1 is the uncompressed restore directory location
-backup_dir=$1/apps/$app
+#=================================================
+# CHECK IF THE APP CAN BE RESTORED
+#=================================================
 
-# Restore sources & data
-sudo cp -a $backup_dir/sources/. $final_path
+yunohost app checkurl "${domain}${path_url}" -a "$app" \
+	|| ynh_die "Path not available: ${domain}${path_url}"
+test ! -d $final_path \
+|| ynh_die "There is already a directory: $final_path "
 
-# Restore Nginx and YunoHost parameters
-sudo cp -a $backup_dir/yunohost/. /etc/yunohost/apps/$app
-sudo cp -a $backup_dir/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
+CHECK_FINALPATH # Check if destination directory is not already in use
 
+#=================================================
+# STANDARD RESTORE STEPS
+#=================================================
+# RESTORE NGINX CONFIGURATION
+#=================================================
 
-sudo apt-get update
-sudo apt-get install npm nodejs nodejs-legacy -qy
+sudo cp -a ./nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
 
-# Restauration des fichiers du script systemd
-sudo cp -a $backup_dir/${app}.service /etc/systemd/system/${app}.service
-## Démarrage auto du service
-sudo systemctl enable ${app}.service
+#=================================================
+# RESTORE LOGROTATE CONFIGURATION
+#=================================================
 
-# Restart webserver
-sudo service nginx reload
+sudo cp -a ./logrotate /etc/logrotate.d/$app
 
-# Start scrumblr
-sudo service $app start
+#=================================================
+# RESTORE APP MAIN DIR
+#=================================================
+
+sudo cp -a ./sources/. $final_path
+
+#=================================================
+# RECREATE OF THE DEDICATED USER
+#=================================================
+
+ynh_system_user_create $app	# Recreate the dedicated user, if not existing
+
+#=================================================
+# RESTORE USER RIGHTS
+#=================================================
+
+sudo chown -R $app: $final_path
+
+#=================================================
+# INSTALL NODEJS
+#=================================================
+ynh_install_nodejs $NODEJS_VERSION
+
+#=================================================
+# RESTORE SYSTEMD CONFIGURATION
+#=================================================
+sudo cp -a ./systemd.service "/etc/systemd/system/$app.service"
+sudo systemctl enable $app
+sudo systemctl daemon-reload
+sudo systemctl start $app
+  
+#=================================================
+# GENERIC FINALIZATION
+#=================================================
+# RELOAD NGINX
+#=================================================
+
+sudo systemctl reload nginx
