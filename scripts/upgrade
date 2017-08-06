@@ -93,7 +93,7 @@ ynh_systemd_config
 
 
 #=================================================
-# INSTALL CRYPTPAD
+# INSTALL OSJS
 #=================================================
 
 script_dir="$PWD"
@@ -111,7 +111,7 @@ popd
 sudo yunohost service add $app --log "/var/log/$app/$app.log"
 
 #=================================================
-# START CRYPTPAD IN BACKGROUND
+# START OSJS IN BACKGROUND
 #=================================================
 
 sudo systemctl start $app
