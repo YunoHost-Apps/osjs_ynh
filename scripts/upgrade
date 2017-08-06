@@ -2,58 +2,131 @@
 
 # Exit on command errors and treat unset variables as an error
 set -eu
+#=================================================
+# GENERIC STARTING
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
 
-source .fonctions
-
-# Source YunoHost helpers
+source _common.sh
 source /usr/share/yunohost/helpers
 
-# Récupère les infos de l'application.
+#=================================================
+# LOAD SETTINGS
+#=================================================
+# Set app specific variables
 app=$YNH_APP_INSTANCE_NAME
+
+# Check destination directory
+DESTDIR="/var/www/$app"
+[[ ! -d $DESTDIR ]] && ynh_die \
+"The destination directory '$DESTDIR' does not exist.\
+ The app is not correctly installed, you should remove it first."
 
 # Retrieve arguments
 domain=$(ynh_app_setting_get "$app" domain)
-path=/
+path_url=$(ynh_normalize_url_path "$(ynh_app_setting_get "$app" path_url)")
+final_path=$(ynh_app_setting_get "$app" final_path)
 is_public=$(ynh_app_setting_get "$app" is_public)
+port=$(ynh_app_setting_get "$app" port)
 
-# Install the app
+#=================================================
+# MANAGE SCRIPT FAILURE
+#=================================================
 
-# Copy files to the right place
+# Use prior backup and restore on error only if backup feature
+# exists on installed instance
+if [ -f "/etc/yunohost/apps/$app/scripts/backup" ] ; then
+  ynh_backup_before_upgrade # Backup the current version of the app
+  ynh_clean_setup () {
+      ynh_backup_after_failed_upgrade
+  }
+  ynh_abort_if_errors	# Stop script if an error is detected
+fi
+
+#=================================================
+# INSTALL NODEJS
+#=================================================
+ynh_install_nodejs 6.2.0
+
+#=================================================
+# CREATE DEDICATED USER
+#=================================================
+
+ynh_system_user_create $app
+
+#=================================================
+# SPECIFIC SETUP
+#=================================================
+# HANDLE LOG FILES AND LOGROTATE
+#=================================================
+
+# Setup logrotate
+ynh_use_logrotate /var/log/${app}/*.log --non-append
+
+#=================================================
+# DOWNLOAD, CHECK AND UNPACK SOURCE
+#=================================================
+
 final_path=/var/www/$app
-extract_source
+ynh_app_setting_set $app final_path $final_path
+ynh_setup_source $final_path
 
-  # Files owned by root, www-data can just read
-sudo chown www-data:www-data $final_path -R
+# Set files ownership during installation
+sudo chown $app: $final_path -R
 sudo chmod 755 $final_path -R
 
- # Modify Nginx configuration file and copy it to Nginx conf directory
-sed -i "s@__PORT__@$port@g" ../conf/nginx.conf
-sed -i "s@__PORT__@$port@g" ../conf/os.js.service
-sed -i "s@__FINALPATH__@$final_path@g" ../conf/os.js.service
-nginxconf=/etc/nginx/conf.d/$domain.d/$app.conf
-sudo cp ../conf/nginx.conf $nginxconf
-sudo chown root: $nginxconf
-sudo chmod 600 $nginxconf
-pushd $final_path
-sudo npm install --production
-sudo node osjs build
+#=================================================
+# Modify Nginx configuration file and copy it to Nginx conf directory
+#=================================================
+
+ynh_nginx_config
+
+#=================================================
+# ADD SYSTEMD SERVICE
+#=================================================
+
+ynh_replace_string "__NODE__" "$nodejs_path" "../conf/systemd.service"
+ynh_replace_string "__NODEJS__" "$nodejs_use_version" "../conf/systemd.service"
+ynh_replace_string "__ENV_PATH__" "$PATH" "../conf/systemd.service"
+ynh_systemd_config
+
+
+#=================================================
+# INSTALL OSJS
+#=================================================
+
+script_dir="$PWD"
+pushd "$final_path"
+sudo chown -R $app: $final_path
+sudo_path npm install --production >> $install_log 2>&1
+sudo_path node osjs build
 popd
-sudo yunohost firewall allow Both 85
-pre_inst_os.js
-sudo service $app start
-sudo systemctl start "$app".service
 
+#=================================================
+# ENABLE SERVICE IN ADMIN PANEL
+#=================================================
 
+# Ajoute le service au monitoring de Yunohost.
+sudo yunohost service add $app --log "/var/log/$app/$app.log"
 
-ynh_app_setting_set "$app" is_public "$is_public"
-if [ "$is_public" = 0 ];
+#=================================================
+# START OSJS IN BACKGROUND
+#=================================================
+
+sudo systemctl start $app
+
+#=================================================
+# SETUP SSOWAT
+#=================================================
+
+if [ $is_public -eq 1 ];
 then
   ynh_app_setting_set "$app" unprotected_uris "/"
 fi
 
-sudo service nginx reload
-sudo yunohost service add "$app" --log /var/log/"$app"/"$app".log
-sudo yunohost app ssowatconf
-
-# Start OS.js
-sudo systemctl restart "$app".service
+#=================================================
+# RELOAD NGINX
+#=================================================
+sudo systemctl restart php5-fpm
+sudo systemctl reload nginx
