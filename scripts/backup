@@ -3,35 +3,48 @@
 # Exit on command errors and treat unset variables as an error
 set -eu
 
-# Source app helpers
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+if [ ! -e _common.sh ]; then
+	# Fetch helpers file if not in current directory
+	sudo cp ../settings/scripts/_common.sh ./_common.sh
+	sudo chmod a+rx _common.sh
+fi
+source _common.sh
 source /usr/share/yunohost/helpers
 
-# Récupère les infos de l'application.
+#=================================================
+# LOAD SETTINGS
+#=================================================
+
 app=$YNH_APP_INSTANCE_NAME
-
-# The parameter $1 is the backup directory location dedicated to the app
-backup_dir=$YNH_APP_BACKUP_DIR
-
-final_path=$(ynh_app_setting_get $app final_path)
 domain=$(ynh_app_setting_get $app domain)
+final_path=$(ynh_app_setting_get $app final_path)
 
-# Copy the app files
-sudo mkdir -p ${backup_dir}/var/www
-sudo cp -a $final_path "${backup_dir}/var/www/$app"
+#=================================================
+# STANDARD BACKUP STEPS
+#=================================================
+# BACKUP APP MAIN DIR
+#=================================================
 
-# Backup sources & data
-sudo mkdir -p "${backup_dir}/sources"
-sudo cp -a $final_path/* $backup_dir/sources
+CHECK_SIZE "$final_path"
+ynh_backup "$final_path" "sources"
 
-# Copy Nginx and YunoHost parameters to make the script "standalone"
-# Copy the conf files
-sudo mkdir -p "${backup_dir}/conf"
-sudo cp -a /etc/nginx/conf.d/$domain.d/$app.conf "${backup_dir}/conf/nginx.conf"
-sudo mkdir -p "${backup_dir}/yunohost"
-sudo cp -a /etc/yunohost/apps/$app/. $backup_dir/yunohost
+#=================================================
+# BACKUP NGINX CONFIGURATION
+#=================================================
 
+ynh_backup "/etc/nginx/conf.d/$domain.d/$app.conf" "nginx.conf"
 
-sudo cp -a /etc/systemd/system/${app}.service $backup_dir/
+#=================================================
+# BACKUP LOGROTATE CONFIGURATION
+#=================================================
+ynh_backup "/etc/logrotate.d/$app" "logrotate"
 
-# Copie du fichier du cron
-sudo cp -a /etc/cron.d/$app $backup_dir/cron_$app
+#=================================================
+# BACKUP SYSTEMD CONFIGURATION
+#=================================================
+
+ynh_backup "/etc/systemd/system/$app.service" "systemd.service"
