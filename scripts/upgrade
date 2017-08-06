@@ -28,6 +28,7 @@ domain=$(ynh_app_setting_get "$app" domain)
 final_path=$(ynh_app_setting_get "$app" final_path)
 is_public=$(ynh_app_setting_get "$app" is_public)
 port=$(ynh_app_setting_get "$app" port)
+install_log=/var/log/$app/installation.log
 
 #=================================================
 # MANAGE SCRIPT FAILURE
