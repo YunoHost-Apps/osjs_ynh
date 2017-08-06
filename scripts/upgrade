@@ -25,7 +25,6 @@ DESTDIR="/var/www/$app"
 
 # Retrieve arguments
 domain=$(ynh_app_setting_get "$app" domain)
-path_url=$(ynh_normalize_url_path "$(ynh_app_setting_get "$app" path_url)")
 final_path=$(ynh_app_setting_get "$app" final_path)
 is_public=$(ynh_app_setting_get "$app" is_public)
 port=$(ynh_app_setting_get "$app" port)
