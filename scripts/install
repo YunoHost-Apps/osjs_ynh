@@ -133,7 +133,7 @@ cat /etc/systemd/system/$app.service
 
 pushd $final_path
 ynh_use_nodejs
-sudo_path npm install --production >> $install_log 2>&1
+sudo_path npm install >> $install_log 2>&1
 sudo_path node osjs build
 popd
 sudo yunohost firewall allow Both $port
