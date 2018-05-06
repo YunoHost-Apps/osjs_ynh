@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -eu
-
 #=================================================
-# GENERIC STARTING
+# GENERIC START
 #=================================================
 # IMPORT GENERIC HELPERS
 #=================================================
@@ -12,19 +10,11 @@ source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
-# MANAGE FAILURE OF THE SCRIPT
+# MANAGE SCRIPT FAILURE
 #=================================================
 
-ynh_clean_setup () {
-# Nettoyage des résidus d'installation non pris en charge par le script remove.
-	if test -n "$PID_TAIL"
-	then
-		SUPPRESS_WARNING kill -s 15 $PID_TAIL	# Arrête l'exécution de tail.
-		ynh_secure_remove "$tempfile"
-	fi
-	echo ""
-}
-ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
 
 #=================================================
 # RETRIEVE ARGUMENTS FROM THE MANIFEST
@@ -32,24 +22,24 @@ ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est dét
 
 domain=$YNH_APP_ARG_DOMAIN
 is_public=$YNH_APP_ARG_IS_PUBLIC
-path_url="" # Assure la compatibilité avec les fonctions utilisant $path_url
+path_url=$YNH_APP_ARG_PATH
 
 app=$YNH_APP_INSTANCE_NAME
 
 #=================================================
-# CHECK IF THE APP CAN BE INSTALLED WITH THIS ARGS
+# CHECK IF THE APP CAN BE INSTALLED WITH THESE ARGS
 #=================================================
 
-if sudo yunohost domain list | grep -q $domain	# Vérifie la liste des domaines
-then	# Si le domaine existe dans Yunohost
-	if sudo yunohost app map | grep -q $domain	# Vérifie la liste des apps par domaine
-	then 	# Si une app est installée sur ce domaine.
-		WARNING echo "An app is already installed on the domain $domain. Mypads needs a whole domain or subdomain to himself."
-	fi
-fi
+final_path=/var/www/$app
+test ! -e "$final_path" || ynh_die "This path already contains a folder"
 
-CHECK_DOMAINPATH	# Vérifie la disponibilité du path et du domaine.
-CHECK_FINALPATH	# Vérifie que le dossier de destination n'est pas déjà utilisé.
+# Normalize the url path syntax
+path_url=$(ynh_normalize_url_path $path_url)
+
+# Check web path availability
+ynh_webpath_available $domain $path_url
+# Register (book) web path
+ynh_webpath_register $app $domain $path_url
 
 #=================================================
 # STORE SETTINGS FROM MANIFEST
@@ -64,14 +54,18 @@ ynh_app_setting_set $app is_public $is_public
 # FIND AND OPEN A PORT
 #=================================================
 
-port=$(ynh_find_port 4000)	# Cherche un port libre.
+# Find a free port
+port=$(ynh_find_port 4000)
+# Open this port
+yunohost firewall allow --no-upnp TCP $port 2>&1
 ynh_app_setting_set $app port $port
 
 #=================================================
 # INSTALL NODEJS
 #=================================================
-version=6.2.0
-ynh_install_nodejs 6.2.0
+
+node_version=6.2.0
+ynh_install_nodejs $node_version
 
 #=================================================
 # CREATE DEDICATED USER
@@ -82,28 +76,12 @@ ynh_system_user_create $app /home/$app	# Créer un utilisateur système dédié 
 #=================================================
 # SPECIFIC SETUP
 #=================================================
-# HANDLE LOG FILES AND LOGROTATE
+# DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 
-# Créer le dossier de log
-sudo mkdir -p /var/log/$app
-sudo touch /var/log/$app/osjs.log
-install_log=/var/log/$app/installation.log
-sudo touch $install_log
-sudo chown $app -R /var/log/$app
-sudo chown admin -R $install_log
-
-# Configuration de logrotate
-ynh_use_logrotate
-
-
-#=================================================
-# Copy files to the right place
-#=================================================
-
-final_path=/var/www/$app
 ynh_app_setting_set $app final_path $final_path
-ynh_setup_source $final_path
+# Download, check integrity, uncompress and patch the source from app.src
+ynh_setup_source "$final_path"
 
 #=================================================
 # Files owned by root, www-data can just read
@@ -113,19 +91,21 @@ sudo chown www-data:www-data $final_path -R
 sudo chmod 755 $final_path -R
 
 #=================================================
-# Modify Nginx configuration file and copy it to Nginx conf directory
+# NGINX CONFIGURATION
 #=================================================
 
-ynh_nginx_config
-nginxconf=/etc/nginx/conf.d/$domain.d/$app.conf
-sudo chown root: $nginxconf
-sudo chmod 600 $nginxconf
+# Create a dedicated nginx config
+ynh_add_nginx_config
+
+#=================================================
+# SETUP SYSTEMD
+#=================================================
+
+# Create a dedicated systemd config
 ynh_systemd_config
 ynh_replace_string "__NODEJS__" "$nodejs_use_version" "/etc/systemd/system/$app.service"
 ynh_replace_string "__ENV_PATH__" "$PATH" "/etc/systemd/system/$app.service"
 ynh_replace_string "__NODE__" "$nodejs_path" "/etc/systemd/system/$app.service"
-
-cat /etc/systemd/system/$app.service
 
 #=================================================
 # Install OSjs
@@ -133,10 +113,9 @@ cat /etc/systemd/system/$app.service
 
 pushd $final_path
 ynh_use_nodejs
-sudo_path npm install >> $install_log 2>&1
-sudo_path node osjs build
+npm install >> $install_log 2>&1
+node osjs build
 popd
-sudo yunohost firewall allow Both $port
 
 #=================================================
 # Configure init script
@@ -147,20 +126,35 @@ sudo systemctl enable "$app".service
 sudo systemctl start "$app".service
 
 #=================================================
-# Set Public or private
+# SETUP LOGROTATE
 #=================================================
 
-ynh_app_setting_set "$app" is_public "$is_public"
-if [ "$is_public" = 0 ];
+# Use logrotate to manage application logfile(s)
+ynh_use_logrotate
+
+#=================================================
+# ADVERTISE SERVICE IN ADMIN PANEL
+#=================================================
+
+yunohost service add NAME_INIT.D --log "/var/log/FILE.log"
+
+#=================================================
+# SETUP SSOWAT
+#=================================================
+
+if [ $is_public -eq 0 ]
+then	# Remove the public access
+	ynh_app_setting_delete $app skipped_uris
+fi
+# Make app public if necessary
+if [ $is_public -eq 1 ]
 then
-  ynh_app_setting_set "$app" unprotected_uris "/"
+	# unprotected_uris allows SSO credentials to be passed anyway.
+	ynh_app_setting_set $app unprotected_uris "/"
 fi
 
 #=================================================
-# Reload Service
+# RELOAD NGINX
 #=================================================
 
-sudo service nginx reload
-sudo yunohost service add "$app" --log /var/log/"$app"/"$app".log
-sudo yunohost app ssowatconf
-
+systemctl reload nginx
