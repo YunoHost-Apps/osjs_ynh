@@ -6,6 +6,7 @@
         "en": "Desktop you have accesss through your browser",
 	"fr": "Bureau accessible à travers votre navigateur"
     },
+    "version": "2.1.6-1",
     "url": "https://www.os-js.org/",
     "license": "MIT",
     "maintainer": {
