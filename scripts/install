@@ -64,7 +64,6 @@ ynh_app_setting_set $app port $port
 # INSTALL NODEJS
 #=================================================
 
-node_version=6.2.0
 ynh_install_nodejs $node_version
 
 #=================================================
