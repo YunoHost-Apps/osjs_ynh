@@ -1,3 +1,6 @@
 SOURCE_URL=https://github.com/os-js/OS.js/archive/v2.1.6.tar.gz
-SOURCE_SUM=b9b691d8adbba9b0605dec0a9ef864b4
-SOURCE_SUM_PRG=md5sum
+SOURCE_SUM=8cac584aa5405b9b5190537dbbcb58c1627bfdcf9dc851b49ead98cab793cf21
+SOURCE_SUM_PRG=sha256sum
+ARCH_FORMAT=tar.gz
+SOURCE_IN_SUBDIR=true
+SOURCE_FILENAME=
