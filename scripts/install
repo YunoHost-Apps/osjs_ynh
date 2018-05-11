@@ -132,9 +132,10 @@ popd
 # Configure init script
 #=================================================
 
-sudo systemctl daemon-reload
-sudo systemctl enable "$app".service
-sudo systemctl start "$app".service
+systemctl daemon-reload
+systemctl enable "$app".service
+systemctl start "$app".service
+systemctl status $app
 
 #=================================================
 # SETUP LOGROTATE
@@ -169,3 +170,4 @@ fi
 #=================================================
 
 systemctl reload nginx
+cat /etc/nginx/conf.d/$domain.conf.d/$app.conf
