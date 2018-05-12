@@ -170,4 +170,3 @@ fi
 #=================================================
 
 systemctl reload nginx
-cat /etc/nginx/conf.d/$domain.conf.d/$app.conf
