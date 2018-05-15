@@ -136,7 +136,6 @@ popd
 systemctl daemon-reload
 systemctl enable "$app".service
 systemctl start "$app".service
-systemctl status $app
 
 #=================================================
 # SETUP LOGROTATE
