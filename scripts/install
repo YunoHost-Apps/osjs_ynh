@@ -23,6 +23,8 @@ ynh_abort_if_errors
 domain=$YNH_APP_ARG_DOMAIN
 is_public=$YNH_APP_ARG_IS_PUBLIC
 path_url=$YNH_APP_ARG_PATH
+admin_user=$YNH_APP_ARG_ADMIN_USER
+admin_pass=$YNH_APP_ARG_ADMIN_PASS
 
 app=$YNH_APP_INSTANCE_NAME
 
@@ -47,6 +49,8 @@ ynh_webpath_register $app $domain $path_url
 
 ynh_app_setting_set $app domain $domain
 ynh_app_setting_set $app is_public $is_public
+ynh_app_setting_set $app admin_user $admin_user
+ynh_app_setting_set $app admin_pass $admin_pass
 
 #=================================================
 # STANDARD MODIFICATIONS
@@ -59,6 +63,16 @@ port=$(ynh_find_port 4000)
 # Open this port
 yunohost firewall allow --no-upnp TCP $port 2>&1
 ynh_app_setting_set $app port $port
+
+#=================================================
+# CREATE A MYSQL DATABASE
+#=================================================
+# If your app uses a MySQL database, you can use these lines to bootstrap
+# a database, an associated user and save the password in app settings
+
+db_name=$(ynh_sanitize_dbid $app)
+ynh_app_setting_set $app db_name $db_name
+ynh_mysql_setup_db $db_name $db_name
 
 #=================================================
 # INSTALL NODEJS
@@ -128,6 +142,28 @@ ynh_use_nodejs
 npm install >> $install_log 2>&1
 node osjs build
 popd
+
+#=================================================
+# Add Authentication through Mysql Database
+#=================================================
+
+node osjs config:set --name=authenticator --value=database
+node osjs config:set --name=server.modules.auth.database.driver --value=mysql
+node osjs config:set --name=server.modules.auth.database.mysql.host --value=localhost
+node osjs config:set --name=server.modules.auth.database.mysql.user --value=$db_name
+node osjs config:set --name=server.modules.auth.database.mysql.password --value=$db_pwd
+node osjs config:set --name=server.modules.auth.database.mysql.database --value=$db_name
+node osjs config:set --name=client.ReloadOnShutdown --value=true
+
+node osjs build:config
+
+#=================================================
+# Add the first user
+#=================================================
+
+node bin/add-user.js add $admin_name admin
+node bin/add-user.js pwd $admin_name <<< $admin_pass
+mkdir vfs/home/$admin_name
 
 #=================================================
 # Configure init script
