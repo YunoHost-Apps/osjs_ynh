@@ -43,7 +43,7 @@ fi
 #=================================================
 
 # Remove the app directory securely
-ynh_secure_remove "$final_path"
+ynh_secure_remove "/var/www/$app"
 
 #=================================================
 # REMOVE NGINX CONFIGURATION
