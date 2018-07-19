@@ -9,6 +9,7 @@ set -eu
 #=================================================
 
 source _common.sh
+source .fonctions
 source /usr/share/yunohost/helpers
 
 #=================================================
