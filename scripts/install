@@ -151,6 +151,12 @@ ynh_use_logrotate
 yunohost service add NAME_INIT.D --log "/var/log/FILE.log"
 
 #=================================================
+# Check if the service started
+#=================================================
+
+ynh_check_starting "Running..." "/var/log/$app/osjs.log" "120"
+
+#=================================================
 # SETUP SSOWAT
 #=================================================
 
