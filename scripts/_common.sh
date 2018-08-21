@@ -198,6 +198,25 @@ EOF
 
 #=================================================
 
+# Erase 
+
+tempus_log_erase {
+	cat > "/etc/cron.daily/tempus_log_erase" << EOF
+#!/bin/bash
+log=/var/log/$app/osjs.log
+size_log=$(ls -lh $log| cut -d " " -f5 | tr -d "K" | tr -d "M")
+if [ $size_log >= 1 ]
+then
+	rm $log
+	touch $log
+	chown $app $log
+fi
+EOF
+
+}
+
+
+#=================================================
 # Start or restart a service and follow its booting
 #
 # usage: ynh_check_starting "Line to match" [Log file] [Timeout] [Service name]
