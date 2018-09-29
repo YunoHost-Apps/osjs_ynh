@@ -200,7 +200,7 @@ EOF
 
 # Erase 
 
-tempus_log_erase {
+tempus_log_erase () {
 	cat > "/etc/cron.daily/tempus_log_erase" << EOF
 #!/bin/bash
 log=/var/log/$app/osjs.log
