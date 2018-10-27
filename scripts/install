@@ -157,7 +157,7 @@ yunohost service add NAME_INIT.D --log "/var/log/FILE.log"
 # Check if the service started
 #=================================================
 
-ynh_check_starting "Running..." "/var/log/$app/osjs.log" "120"
+ynh_check_starting "HTTP Listening at localhost:$port" "/var/log/$app/osjs.log" "120"
 
 #=================================================
 # SETUP SSOWAT
