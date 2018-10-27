@@ -124,6 +124,7 @@ sudo chown admin -R $install_log
 #=================================================
 
 pushd $final_path
+ynh_replace_string "port: 8000" "$port" "$final_path/src/server/config.js"
 ynh_use_nodejs
 NODE_ENV=production npm install >> $install_log 2>&1
 NODE_ENV=production npm run build
