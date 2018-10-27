@@ -152,7 +152,7 @@ ynh_use_logrotate
 # ADVERTISE SERVICE IN ADMIN PANEL
 #=================================================
 
-yunohost service add osjs --log "/var/log/FILE.log"
+yunohost service add $app --log "/var/log/$app/$app.log"
 
 #=================================================
 # Check if the service started
