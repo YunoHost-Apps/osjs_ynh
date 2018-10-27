@@ -1,5 +1,5 @@
-SOURCE_URL=https://github.com/os-js/OS.js/archive/v2.1.6.tar.gz
-SOURCE_SUM=8cac584aa5405b9b5190537dbbcb58c1627bfdcf9dc851b49ead98cab793cf21
+SOURCE_URL=https://github.com/os-js/OS.js/archive/1380d4b98048dee2d7e95b9dddbf9af323f5fdab.tar.gz
+SOURCE_SUM=2cbfad95c59016a404bec35db0a4e7b6ebf4e6f782ee17745ca553fdbc23f1b4
 SOURCE_SUM_PRG=sha256sum
 ARCH_FORMAT=tar.gz
 SOURCE_IN_SUBDIR=true

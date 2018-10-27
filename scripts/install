@@ -55,7 +55,7 @@ ynh_app_setting_set $app is_public $is_public
 #=================================================
 
 # Find a free port
-port=$(ynh_find_port 4000)
+port=$(ynh_find_port 8000)
 # Open this port
 yunohost firewall allow --no-upnp TCP $port 2>&1
 ynh_app_setting_set $app port $port
@@ -126,13 +126,18 @@ sudo chown admin -R $install_log
 pushd $final_path
 ynh_use_nodejs
 npm install >> $install_log 2>&1
-node osjs build
+NODE_ENV=production npm run build >> $install_log 2>&1
+npm run package:discover
 popd
 
 #=================================================
-# Configure init script
+# Set right on directory and configure init script
 #=================================================
 
+ynh_replace_string "8000" "$port" "$final_path/src/server/config.js"
+chown $app:$app $final_path -R
+chmod 755 $final_path -R
+chown $app:$app /var/log/$app/$app.log
 systemctl daemon-reload
 systemctl enable "$app".service
 systemctl start "$app".service
@@ -148,13 +153,14 @@ ynh_use_logrotate
 # ADVERTISE SERVICE IN ADMIN PANEL
 #=================================================
 
-yunohost service add NAME_INIT.D --log "/var/log/FILE.log"
+yunohost service add $app --log "/var/log/$app/$app.log"
 
 #=================================================
 # Check if the service started
 #=================================================
 
-ynh_check_starting "Running..." "/var/log/$app/osjs.log" "120"
+#ynh_check_starting "HTTP Listening at localhost:$port" "/var/log/$app/$app.log" "120"
+sleep 10
 
 #=================================================
 # SETUP SSOWAT
