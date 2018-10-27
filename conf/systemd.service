@@ -10,7 +10,7 @@ Group=__APP__
 WorkingDirectory=__FINALPATH__
 ExecStartPre=__NODEJS__
 Environment="PATH=__ENV_PATH__"
-ExecStart=NODE_ENV=production __NODE__/npm run serve >> /var/log/__APP__/osjs.log
+ExecStart=__NODE__/npm run serve >> /var/log/__APP__/osjs.log
 Restart=always
 
 [Install]
