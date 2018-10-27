@@ -124,7 +124,7 @@ sudo chown admin -R $install_log
 #=================================================
 
 pushd $final_path
-ynh_replace_string "port: 8000" "$port" "$final_path/src/server/config.js"
+ynh_replace_string "port: 8000" "port: $port" "$final_path/src/server/config.js"
 ynh_use_nodejs
 npm install >> $install_log 2>&1
 NODE_ENV=production npm run build >> $install_log 2>&1
@@ -134,8 +134,9 @@ popd
 # Set right on directory and configure init script
 #=================================================
 
-sudo chown $app:$app $final_path -R
-sudo chmod 755 $final_path -R
+chown $app:$app $final_path -R
+chmod 755 $final_path -R
+chown $app:$app /var/log/$app/osjs.log
 systemctl daemon-reload
 systemctl enable "$app".service
 systemctl start "$app".service
@@ -151,7 +152,7 @@ ynh_use_logrotate
 # ADVERTISE SERVICE IN ADMIN PANEL
 #=================================================
 
-yunohost service add NAME_INIT.D --log "/var/log/FILE.log"
+yunohost service add osjs --log "/var/log/FILE.log"
 
 #=================================================
 # Check if the service started
