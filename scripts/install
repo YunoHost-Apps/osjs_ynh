@@ -159,7 +159,8 @@ yunohost service add $app --log "/var/log/$app/$app.log"
 # Check if the service started
 #=================================================
 
-ynh_check_starting "HTTP Listening at localhost:$port" "/var/log/$app/$app.log" "120"
+#ynh_check_starting "HTTP Listening at localhost:$port" "/var/log/$app/$app.log" "120"
+sleep 10
 
 #=================================================
 # SETUP SSOWAT
