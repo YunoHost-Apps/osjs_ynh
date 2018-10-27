@@ -136,7 +136,7 @@ popd
 
 chown $app:$app $final_path -R
 chmod 755 $final_path -R
-chown $app:$app /var/log/$app/osjs.log
+chown $app:$app /var/log/$app/$app.log
 systemctl daemon-reload
 systemctl enable "$app".service
 systemctl start "$app".service
@@ -158,7 +158,7 @@ yunohost service add $app --log "/var/log/$app/$app.log"
 # Check if the service started
 #=================================================
 
-ynh_check_starting "HTTP Listening at localhost:$port" "/var/log/$app/osjs.log" "120"
+ynh_check_starting "HTTP Listening at localhost:$port" "/var/log/$app/$app.log" "120"
 
 #=================================================
 # SETUP SSOWAT
