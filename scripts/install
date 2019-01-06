@@ -124,9 +124,10 @@ sudo chown admin -R $install_log
 #=================================================
 
 pushd $final_path
-ynh_use_nodejs
-npm install >> $install_log 2>&1
-NODE_ENV=production npm run build >> $install_log 2>&1
+#ynh_use_nodejs
+#npm install >> $install_log 2>&1
+NODE_ENV=production npm install
+NODE_ENV=production npm run build
 npm run package:discover
 popd
 
