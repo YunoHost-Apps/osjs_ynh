@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Exit on command errors and treat unset variables as an error
-set -eu
 #=================================================
-# GENERIC STARTING
+# GENERIC START
 #=================================================
 # IMPORT GENERIC HELPERS
 #=================================================
@@ -14,119 +12,154 @@ source /usr/share/yunohost/helpers
 #=================================================
 # LOAD SETTINGS
 #=================================================
-# Set app specific variables
+ynh_script_progression --message="Loading installation settings..."
+
 app=$YNH_APP_INSTANCE_NAME
 
-# Check destination directory
-DESTDIR="/var/www/$app"
-[[ ! -d $DESTDIR ]] && ynh_die \
-"The destination directory '$DESTDIR' does not exist.\
- The app is not correctly installed, you should remove it first."
-
-# Retrieve arguments
-domain=$(ynh_app_setting_get "$app" domain)
-final_path=$(ynh_app_setting_get "$app" final_path)
-is_public=$(ynh_app_setting_get "$app" is_public)
-port=$(ynh_app_setting_get "$app" port)
-install_log=/var/log/$app/installation.log
+domain=$(ynh_app_setting_get --app=$app --key=domain)
+path_url=$(ynh_app_setting_get --app=$app --key=path)
+port=$(ynh_app_setting_get --app=$app --key=port)
 
 #=================================================
-# MANAGE SCRIPT FAILURE
+# CHECK VERSION
 #=================================================
+ynh_script_progression --message="Checking version..."
 
-# Use prior backup and restore on error only if backup feature
-# exists on installed instance
-if [ -f "/etc/yunohost/apps/$app/scripts/backup" ] ; then
-  ynh_backup_before_upgrade # Backup the current version of the app
-  ynh_clean_setup () {
-      ynh_backup_after_failed_upgrade
-  }
-  ynh_abort_if_errors	# Stop script if an error is detected
+upgrade_type=$(ynh_check_app_version_changed)
+
+#=================================================
+# BACKUP BEFORE UPGRADE THEN ACTIVE TRAP
+#=================================================
+ynh_script_progression --message="Backing up the app before upgrading (may take a while)..."
+
+# Backup the current version of the app
+ynh_backup_before_upgrade
+ynh_clean_setup () {
+	ynh_clean_check_starting
+	# Restore it if the upgrade fails
+	ynh_restore_upgradebackup
+}
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
+
+#=================================================
+# STANDARD UPGRADE STEPS
+#=================================================
+# STOP SYSTEMD SERVICE
+#=================================================
+ynh_script_progression --message="Stopping a systemd service..."
+
+ynh_systemd_action --service_name=$app --action="stop" --log_path="/var/log/$app/$app.log"
+
+#=================================================
+# ENSURE DOWNWARD COMPATIBILITY
+#=================================================
+ynh_script_progression --message="Ensuring downward compatibility..."
+
+# Cleaning legacy permissions
+if ynh_legacy_permissions_exists; then
+	ynh_legacy_permissions_delete_all
+
+	ynh_app_setting_delete --app=$app --key=is_public
 fi
-
-#=================================================
-# INSTALL NODEJS
-#=================================================
-ynh_install_nodejs 6.2.0
 
 #=================================================
 # CREATE DEDICATED USER
 #=================================================
+ynh_script_progression --message="Making sure dedicated system user exists..."
 
-ynh_system_user_create $app
-
-#=================================================
-# SPECIFIC SETUP
-#=================================================
-# HANDLE LOG FILES AND LOGROTATE
-#=================================================
-
-# Setup logrotate
-ynh_use_logrotate /var/log/${app}/*.log --non-append
+# Create a dedicated user (if not existing)
+ynh_system_user_create --username=$app --home_dir="$final_path"
 
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 
-final_path=/var/www/$app
-ynh_app_setting_set $app final_path $final_path
-ynh_setup_source $final_path
+if [ "$upgrade_type" == "UPGRADE_APP" ]
+then
+	ynh_script_progression --message="Upgrading source files..."
 
-# Set files ownership during installation
-sudo chown $app: $final_path -R
-sudo chmod 755 $final_path -R
+	# Download, check integrity, uncompress and patch the source from app.src
+	ynh_setup_source --dest_dir="$final_path" --keep="src/client/config.js src/server/index.js"
+fi
 
-#=================================================
-# Modify Nginx configuration file and copy it to Nginx conf directory
-#=================================================
-
-ynh_nginx_config
+chmod 750 "$final_path"
+chmod -R o-rwx "$final_path"
+chown -R $app:$app "$final_path"
 
 #=================================================
-# ADD SYSTEMD SERVICE
+# NGINX CONFIGURATION
 #=================================================
+ynh_script_progression --message="Upgrading NGINX web server configuration..."
 
-ynh_replace_string "__NODE__" "$nodejs_path" "../conf/systemd.service"
-ynh_replace_string "__NODEJS__" "$nodejs_use_version" "../conf/systemd.service"
-ynh_replace_string "__ENV_PATH__" "$PATH" "../conf/systemd.service"
-ynh_systemd_config
-
+# Create a dedicated NGINX config
+ynh_add_nginx_config
 
 #=================================================
-# INSTALL OSJS
+# UPGRADE DEPENDENCIES
 #=================================================
+ynh_script_progression --message="Upgrading dependencies..."
 
-script_dir="$PWD"
-pushd "$final_path"
-sudo chown -R $app: $final_path
-sudo_path npm install --production >> $install_log 2>&1
-sudo_path node osjs build
+ynh_install_app_dependencies $pkg_dependencies
+ynh_install_nodejs --nodejs_version=$nodejs_version
+
+#=================================================
+# SPECIFIC UPGRADE
+#=================================================
+# BUILD APP
+#=================================================
+ynh_script_progression --message="Building app..."
+
+pushd $final_path
+	ynh_use_nodejs
+	$ynh_npm install
+	$ynh_npm run package:discover
+	$ynh_npm run build
+	npm install --save --production @osjs/pam-auth
 popd
 
 #=================================================
-# ENABLE SERVICE IN ADMIN PANEL
+# SETUP SYSTEMD
 #=================================================
+ynh_script_progression --message="Upgrading systemd configuration..."
 
-# Ajoute le service au monitoring de Yunohost.
-sudo yunohost service add $app --log "/var/log/$app/$app.log"
-
-#=================================================
-# START OSJS IN BACKGROUND
-#=================================================
-
-sudo systemctl start $app
+# Create a dedicated systemd config
+ynh_add_systemd_config
 
 #=================================================
-# SETUP SSOWAT
+# GENERIC FINALIZATION
 #=================================================
+# SETUP LOGROTATE
+#=================================================
+ynh_script_progression --message="Upgrading logrotate configuration..."
 
-if [ $is_public -eq 1 ];
-then
-  ynh_app_setting_set "$app" unprotected_uris "/"
-fi
+# Use logrotate to manage app-specific logfile(s)
+ynh_use_logrotate --non-append
+
+#=================================================
+# INTEGRATE SERVICE IN YUNOHOST
+#=================================================
+ynh_script_progression --message="Integrating service in YunoHost..."
+
+yunohost service add $app --log="/var/log/$app/$app.log"
+
+#=================================================
+# START SYSTEMD SERVICE
+#=================================================
+ynh_script_progression --message="Starting a systemd service..."
+
+# Start a systemd service
+ynh_systemd_action --service_name=$app --action="start" --log_path="/var/log/$app/$app.log" --line_match="Server listening on"
 
 #=================================================
 # RELOAD NGINX
 #=================================================
-sudo systemctl restart php5-fpm
-sudo systemctl reload nginx
+ynh_script_progression --message="Reloading NGINX web server..."
+
+ynh_systemd_action --service_name=nginx --action=reload
+
+#=================================================
+# END OF SCRIPT
+#=================================================
+
+ynh_script_progression --message="Upgrade of $app completed"
