@@ -2,15 +2,14 @@
 Description=OS.js is a web-desktop written in Nodejs and javascript. 
 After=network.target
 
-
 [Service]
 Type=simple
 User=__APP__
 Group=__APP__
-WorkingDirectory=__FINALPATH__
-ExecStartPre=__NODEJS__
-Environment="PATH=__ENV_PATH__"
-ExecStart=__NODE__/node osjs run --port=__PORT__
+WorkingDirectory=__FINALPATH__/
+Environment="__YNH_NODE_LOAD_PATH__"
+ExecStart=__YNH_NPM__ run serve
+StandardOutput=append:/var/log/__APP__/__APP__.log
 Restart=always
 
 [Install]
