@@ -107,6 +107,21 @@ ynh_install_nodejs --nodejs_version=$nodejs_version
 #=================================================
 # SPECIFIC UPGRADE
 #=================================================
+# UPDATE A CONFIG FILE
+#=================================================
+ynh_script_progression --message="Updating a configuration file..."
+
+ynh_add_config --template="../conf/client.config.js" --destination="$final_path/src/client/config.js"
+
+chmod 400 "$final_path/src/client/config.js"
+chown $app:$app "$final_path/src/client/config.js"
+
+ynh_add_config --template="../conf/server.index.js" --destination="$final_path/src/server/index.js"
+
+chmod 400 "$final_path/src/server/index.js"
+chown $app:$app "$final_path/src/server/index.js"
+
+#=================================================
 # BUILD APP
 #=================================================
 ynh_script_progression --message="Building app..."
