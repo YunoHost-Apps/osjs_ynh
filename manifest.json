@@ -6,7 +6,7 @@
         "en": "Desktop you have accesss through your browser",
         "fr": "Bureau accessible à travers votre navigateur"
     },
-    "version": "3.1.12~ynh1",
+    "version": "3.1.12~ynh2",
     "url": "https://www.os-js.org/",
     "upstream": {
         "license": "MIT",
