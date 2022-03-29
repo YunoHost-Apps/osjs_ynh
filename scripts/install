@@ -140,36 +140,6 @@ pushd $final_path
 	npm install --save --production @osjs/pam-auth
 popd
 
-#=================================================
-# Add Authentication through Mysql Database
-#=================================================
-
-#pushd $final_path
-	#$ynh_npm install --save --production @osjs/database-auth
-	#$ynh_npm install --save mysql
-	#$ynh_node osjs config:set --name=authenticator --value=database
-	#$ynh_node osjs config:set --name=server.modules.auth.database.driver --value=mysql
-	#$ynh_node osjs config:set --name=server.modules.auth.database.mysql.host --value=localhost
-	#$ynh_node osjs config:set --name=server.modules.auth.database.mysql.user --value=$db_name
-	#$ynh_node osjs config:set --name=server.modules.auth.database.mysql.password --value=$db_pwd
-	#$ynh_node osjs config:set --name=server.modules.auth.database.mysql.database --value=$db_name
-	#$ynh_node osjs config:set --name=client.ReloadOnShutdown --value=true
-#popd
-
-#$ynh_node osjs build:config
-
-#=================================================
-# Add the first user
-#=================================================
-
-##$ynh_node bin/add-user.js add $admin_name admin
-#$ynh_node bin/add-user.js pwd $admin_name <<< $admin_pass
-#mkdir vfs/home/$admin_name
-
-#=================================================
-# Configure init script
-#=================================================
-
 ynh_replace_string --match_string="8000" --replace_string="$port" --target_file="$final_path/src/server/config.js"
 
 chown -R $app:$app "$final_path"
