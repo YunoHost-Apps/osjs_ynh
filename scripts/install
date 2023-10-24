@@ -43,7 +43,7 @@ chown $app:$app "/var/log/$app"
 # Use logrotate to manage application logfile(s)
 ynh_use_logrotate
 
-yunohost service add $app --log="/var/log/$app/$app.log"
+yunohost service add $app --description="Desktop you have accesss through your browser" --log="/var/log/$app/$app.log"
 
 #=================================================
 # SPECIFIC SETUP
