@@ -48,7 +48,7 @@ ram.runtime = "50M"
         [resources.sources.main]
         url = "https://github.com/os-js/OS.js/archive/refs/tags/3.1.12.tar.gz"
         sha256 = "c5f04810e4f5604adadc7bc0c17f2d7eee49d521915ad9ac2203b835b3e9987d"
-
+        autoupdate.strategy = "latest_github_tag"
 
     [resources.system_user]
 
