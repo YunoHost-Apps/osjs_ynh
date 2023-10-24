@@ -4,10 +4,7 @@
 # COMMON VARIABLES
 #=================================================
 
-nodejs_version=10
-
-# dependencies used by the app
-#REMOVEME? pkg_dependencies="libpam0g-dev"
+nodejs_version=16
 
 #=================================================
 # PERSONAL HELPERS
