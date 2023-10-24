@@ -35,6 +35,16 @@ ynh_script_progression --message="Configuring NGINX web server..."
 # Create a dedicated NGINX config
 ynh_add_nginx_config
 
+# Create a dedicated systemd config
+ynh_add_systemd_config
+
+mkdir -p "/var/log/$app"
+chown $app:$app "/var/log/$app"
+# Use logrotate to manage application logfile(s)
+ynh_use_logrotate
+
+yunohost service add $app --log="/var/log/$app/$app.log"
+
 #=================================================
 # SPECIFIC SETUP
 #=================================================
@@ -68,33 +78,6 @@ popd
 ynh_replace_string --match_string="8000" --replace_string="$port" --target_file="$install_dir/src/server/config.js"
 
 chown -R $app:$app "$install_dir"
-
-#=================================================
-# SETUP SYSTEMD
-#=================================================
-ynh_script_progression --message="Configuring a systemd service..."
-
-# Create a dedicated systemd config
-ynh_add_systemd_config
-
-#=================================================
-# GENERIC FINALIZATION
-#=================================================
-# SETUP LOGROTATE
-#=================================================
-ynh_script_progression --message="Configuring log rotation..."
-
-mkdir -p "/var/log/$app"
-chown $app:$app "/var/log/$app"
-# Use logrotate to manage application logfile(s)
-ynh_use_logrotate
-
-#=================================================
-# INTEGRATE SERVICE IN YUNOHOST
-#=================================================
-ynh_script_progression --message="Integrating service in YunoHost..."
-
-yunohost service add $app --log="/var/log/$app/$app.log"
 
 #=================================================
 # START SYSTEMD SERVICE
