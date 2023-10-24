@@ -7,7 +7,7 @@
 nodejs_version=10
 
 # dependencies used by the app
-pkg_dependencies="libpam0g-dev"
+#REMOVEME? pkg_dependencies="libpam0g-dev"
 
 #=================================================
 # PERSONAL HELPERS
