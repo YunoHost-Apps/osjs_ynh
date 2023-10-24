@@ -59,10 +59,10 @@ ynh_script_progression --message="Building $app..."
 
 pushd $install_dir
 	ynh_use_nodejs
-	$ynh_npm install
-	$ynh_npm run package:discover
-	$ynh_npm run build
-	npm install --save --production @osjs/pam-auth
+	ynh_exec_warn_less $ynh_npm install
+	ynh_exec_warn_less $ynh_npm run package:discover
+	ynh_exec_warn_less $ynh_npm run build
+	ynh_exec_warn_less npm install --save --production @osjs/pam-auth
 popd
 
 ynh_replace_string --match_string="8000" --replace_string="$port" --target_file="$install_dir/src/server/config.js"
