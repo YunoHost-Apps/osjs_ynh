@@ -10,6 +10,7 @@ WorkingDirectory=__INSTALL_DIR__/
 Environment="__YNH_NODE_LOAD_PATH__"
 ExecStart=__YNH_NPM__ run serve
 StandardOutput=append:/var/log/__APP__/__APP__.log
+StandardError=syslog
 Restart=always
 
 # Sandboxing options to harden security
