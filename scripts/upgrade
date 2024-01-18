@@ -32,7 +32,6 @@ if [ "$upgrade_type" == "UPGRADE_APP" ]
 then
 	ynh_script_progression --message="Upgrading source files..."
 
-	# Download, check integrity, uncompress and patch the source from app.src
 	ynh_setup_source --dest_dir="$install_dir" --keep="src/client/config.js src/server/index.js"
 fi
 
@@ -44,7 +43,6 @@ chown -R $app:$app "$install_dir"
 #=================================================
 ynh_script_progression --message="Upgrading NGINX web server configuration..."
 
-# Create a dedicated NGINX config
 ynh_add_nginx_config
 
 ynh_install_nodejs --nodejs_version=$nodejs_version
@@ -62,12 +60,12 @@ yunohost service add $app --description="Desktop you have accesss through your b
 #=================================================
 ynh_script_progression --message="Updating a configuration file..."
 
-ynh_add_config --template="../conf/client.config.js" --destination="$install_dir/src/client/config.js"
+ynh_add_config --template="client.config.js" --destination="$install_dir/src/client/config.js"
 
 chmod 400 "$install_dir/src/client/config.js"
 chown $app:$app "$install_dir/src/client/config.js"
 
-ynh_add_config --template="../conf/server.index.js" --destination="$install_dir/src/server/index.js"
+ynh_add_config --template="server.index.js" --destination="$install_dir/src/server/index.js"
 
 chmod 400 "$install_dir/src/server/index.js"
 chown $app:$app "$install_dir/src/server/index.js"
@@ -79,10 +77,10 @@ ynh_script_progression --message="Building app..."
 
 pushd $install_dir
 	ynh_use_nodejs
-	ynh_exec_warn_less $ynh_npm install
-	ynh_exec_warn_less $ynh_npm run package:discover
-	ynh_exec_warn_less $ynh_npm run build
-	ynh_exec_warn_less npm install --save --production @osjs/pam-auth
+	ynh_exec_warn_less ynh_exec_as $app env $ynh_node_load_PATH $ynh_npm install
+	ynh_exec_warn_less ynh_exec_as $app env $ynh_node_load_PATH $ynh_npm run package:discover
+	ynh_exec_warn_less ynh_exec_as $app env $ynh_node_load_PATH $ynh_npm run build
+	ynh_exec_warn_less ynh_exec_as $app env $ynh_node_load_PATH $ynh_npm install --save --production @osjs/pam-auth
 popd
 
 ynh_replace_string --match_string="8000" --replace_string="$port" --target_file="$install_dir/src/server/config.js"
