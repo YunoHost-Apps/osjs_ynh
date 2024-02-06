@@ -16,12 +16,17 @@ If you don't have YunoHost, please consult [the guide](https://yunohost.org/#/in
 
 ## Overview
 
-[OS.js](https://www.os-js.org/) is an [open-source](https://raw.githubusercontent.com/os-js/OS.js/master/LICENSE) web desktop platform with a window manager, application APIs, GUI toolkit, filesystem abstractions and much more.
+OS.js is an open-source web desktop platform with a window manager, application APIs, GUI toolkit, filesystem abstractions and much more.
 
 
 **Shipped version:** 3.1.12~ynh2
 
 **Demo:** https://demo.os-js.org/
+
+## Screenshots
+
+![Screenshot of OSjs](./doc/screenshots/screenshot.png)
+
 ## Documentation and resources
 
 * Official app website: <https://www.os-js.org>

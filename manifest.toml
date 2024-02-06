@@ -1,0 +1,69 @@
+packaging_format = 2
+
+id = "osjs"
+name = "OSjs"
+description.en = "Desktop you have accesss through your browser"
+description.fr = "Bureau accessible à travers votre navigateur"
+
+version = "3.1.12~ynh2"
+
+maintainers = ["frju365"]
+
+[upstream]
+license = "MIT"
+website = "https://www.os-js.org"
+demo = "https://demo.os-js.org/"
+admindoc = "https://manual.os-js.org/"
+code = "https://github.com/os-js/OS.js"
+
+[integration]
+yunohost = ">= 11.2"
+architectures = "all"
+multi_instance = false
+
+ldap = false
+
+sso = false
+
+disk = "50M"
+ram.build = "300M"
+ram.runtime = "50M"
+
+[install]
+    [install.domain]
+    type = "domain"
+
+    [install.path]
+    type = "path"
+    default = "/osjs"
+
+    [install.init_main_permission]
+    type = "group"
+    default = "visitors"
+
+    [install.admin]
+    type = "user"
+
+    [install.password]
+    type = "password"
+
+[resources]
+        [resources.sources.main]
+        url = "https://github.com/os-js/OS.js/archive/refs/tags/3.1.12.tar.gz"
+        sha256 = "c5f04810e4f5604adadc7bc0c17f2d7eee49d521915ad9ac2203b835b3e9987d"
+        autoupdate.strategy = "latest_github_tag"
+
+    [resources.system_user]
+
+    [resources.install_dir]
+
+    [resources.ports]
+
+    [resources.permissions]
+    main.url = "/"
+
+    [resources.apt]
+    packages = "mariadb-server, libpam0g-dev"
+
+    [resources.database]
+    type = "mysql"
