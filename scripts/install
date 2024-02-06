@@ -10,9 +10,9 @@ source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
-# INSTALL DEPENDENCIES
+# INSTALL NODEJS
 #=================================================
-ynh_script_progression --message="Installing dependencies..."
+ynh_script_progression --message="Installing NodeJS..."
 
 ynh_install_nodejs --nodejs_version=$nodejs_version
 
@@ -24,24 +24,7 @@ ynh_script_progression --message="Setting up source files..."
 ynh_setup_source --dest_dir="$install_dir"
 
 chmod -R o-rwx "$install_dir"
-chown -R $app:$app "$install_dir"
-
-#=================================================
-# NGINX CONFIGURATION
-#=================================================
-ynh_script_progression --message="Configuring NGINX web server..."
-
-ynh_add_nginx_config
-
-ynh_add_systemd_config
-
-mkdir -p "/var/log/$app"
-chown $app:$app "/var/log/$app"
-
-# Use logrotate to manage application logfile(s)
-ynh_use_logrotate
-
-yunohost service add $app --description="Desktop you have accesss through your browser" --log="/var/log/$app/$app.log"
+chown -R "$app:$app" "$install_dir"
 
 #=================================================
 # SPECIFIC SETUP
@@ -53,29 +36,42 @@ ynh_script_progression --message="Adding a configuration file..."
 ynh_add_config --template="client.config.js" --destination="$install_dir/src/client/config.js"
 
 chmod 400 "$install_dir/src/client/config.js"
-chown $app:$app "$install_dir/src/client/config.js"
+chown "$app:$app" "$install_dir/src/client/config.js"
 
 ynh_add_config --template="server.index.js" --destination="$install_dir/src/server/index.js"
 
 chmod 400 "$install_dir/src/server/index.js"
-chown $app:$app "$install_dir/src/server/index.js"
+chown "$app:$app" "$install_dir/src/server/index.js"
 
 #=================================================
 # BUILD APP
 #=================================================
 ynh_script_progression --message="Building $app..."
 
-pushd $install_dir
+pushd "$install_dir"
 	ynh_use_nodejs
-	ynh_exec_warn_less ynh_exec_as $app env $ynh_node_load_PATH $ynh_npm install
-	ynh_exec_warn_less ynh_exec_as $app env $ynh_node_load_PATH $ynh_npm run package:discover
-	ynh_exec_warn_less ynh_exec_as $app env $ynh_node_load_PATH $ynh_npm run build
-	ynh_exec_warn_less ynh_exec_as $app env $ynh_node_load_PATH $ynh_npm install --save --production @osjs/pam-auth
+	ynh_exec_warn_less ynh_exec_as "$app" env "$ynh_node_load_PATH" "$ynh_npm" install
+	ynh_exec_warn_less ynh_exec_as "$app" env "$ynh_node_load_PATH" "$ynh_npm" run package:discover
+	ynh_exec_warn_less ynh_exec_as "$app" env "$ynh_node_load_PATH" "$ynh_npm" run build
+	ynh_exec_warn_less ynh_exec_as "$app" env "$ynh_node_load_PATH" "$ynh_npm" install --save --production @osjs/pam-auth
 popd
 
 ynh_replace_string --match_string="8000" --replace_string="$port" --target_file="$install_dir/src/server/config.js"
 
-chown -R $app:$app "$install_dir"
+chown -R "$app:$app" "$install_dir"
+
+#=================================================
+# SYSTEM CONFIGURATION
+#=================================================
+ynh_script_progression --message="Adding system configurations related to $app..." --weight=1
+
+ynh_add_nginx_config
+
+ynh_add_systemd_config
+yunohost service add "$app" --description="Desktop you have accesss through your browser" --log="/var/log/$app/$app.log"
+
+# Use logrotate to manage application logfile(s)
+ynh_use_logrotate
 
 #=================================================
 # START SYSTEMD SERVICE
@@ -83,7 +79,7 @@ chown -R $app:$app "$install_dir"
 ynh_script_progression --message="Starting a systemd service..."
 
 # Start a systemd service
-ynh_systemd_action --service_name=$app --action="start" --log_path="/var/log/$app/$app.log" --line_match="Server listening on"
+ynh_systemd_action --service_name="$app" --action="start" --log_path="/var/log/$app/$app.log" --line_match="Server listening on"
 
 #=================================================
 # END OF SCRIPT
