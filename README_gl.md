@@ -19,13 +19,17 @@ NON debe editarse manualmente.
 OS.js is an open-source web desktop platform with a window manager, application APIs, GUI toolkit, filesystem abstractions and much more.
 
 
-**Versión proporcionada:** 3.1.12~ynh2
+**Versión proporcionada:** 3.1.12~ynh3
 
 **Demo:** <https://demo.os-js.org/>
 
 ## Capturas de pantalla
 
 ![Captura de pantalla de OSjs](./doc/screenshots/screenshot.png)
+
+## :red_circle: Caraterísticas cuestionables
+
+- **Upstream not maintained**: This software is not maintained anymore. Expect it to break down over time, be exposed to unfixed security breaches, etc.
 
 ## Documentación e recursos
 

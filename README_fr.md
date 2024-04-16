@@ -19,13 +19,17 @@ Il NE doit PAS être modifié à la main.
 OS.js est une plate-forme de bureau Web open source avec un gestionnaire de fenêtres, des API d'application, une boîte à outils GUI, des abstractions de système de fichiers et bien plus encore.
 
 
-**Version incluse :** 3.1.12~ynh2
+**Version incluse :** 3.1.12~ynh3
 
 **Démo :** <https://demo.os-js.org/>
 
 ## Captures d’écran
 
 ![Capture d’écran de OSjs](./doc/screenshots/screenshot.png)
+
+## :red_circle: Anti-fonctionnalités
+
+- **Application non maintenue **: Ce logiciel n'est plus maintenu. Attendez-vous à ce qu'il ne fonctionne plus avec le temps, et que l'on découvre des failles de sécurité qui ne seront pas corrigées, etc.
 
 ## Documentations et ressources
 
