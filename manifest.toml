@@ -5,7 +5,7 @@ name = "OSjs"
 description.en = "Desktop you have accesss through your browser"
 description.fr = "Bureau accessible à travers votre navigateur"
 
-version = "3.1.12~ynh2"
+version = "3.1.12~ynh3"
 
 maintainers = ["frju365"]
 
