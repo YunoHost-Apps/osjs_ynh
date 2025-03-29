@@ -1,88 +1,68 @@
 #!/bin/bash
 
-#=================================================
-# GENERIC START
-#=================================================
-# IMPORT GENERIC HELPERS
-#=================================================
-
 source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
 # INSTALL NODEJS
 #=================================================
-ynh_script_progression --message="Installing NodeJS..."
+ynh_script_progression "Installing NodeJS..."
 
-ynh_install_nodejs --nodejs_version=$nodejs_version
+ynh_nodejs_install
 
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
-ynh_script_progression --message="Setting up source files..."
+ynh_script_progression "Setting up source files..."
 
 ynh_setup_source --dest_dir="$install_dir"
-
-chmod -R o-rwx "$install_dir"
-chown -R "$app:$app" "$install_dir"
 
 #=================================================
 # SPECIFIC SETUP
 #=================================================
 # ADD A CONFIGURATION
 #=================================================
-ynh_script_progression --message="Adding a configuration file..."
+ynh_script_progression "Adding $app's configuration..."
 
-ynh_add_config --template="client.config.js" --destination="$install_dir/src/client/config.js"
+ynh_config_add --template="client.config.js" --destination="$install_dir/src/client/config.js"
 
-chmod 400 "$install_dir/src/client/config.js"
-chown "$app:$app" "$install_dir/src/client/config.js"
-
-ynh_add_config --template="server.index.js" --destination="$install_dir/src/server/index.js"
-
-chmod 400 "$install_dir/src/server/index.js"
-chown "$app:$app" "$install_dir/src/server/index.js"
+ynh_config_add --template="server.index.js" --destination="$install_dir/src/server/index.js"
 
 #=================================================
 # BUILD APP
 #=================================================
-ynh_script_progression --message="Building $app..."
+ynh_script_progression "Building $app..."
 
 pushd "$install_dir"
-	ynh_use_nodejs
-	ynh_exec_warn_less ynh_exec_as "$app" env "$ynh_node_load_PATH" "$ynh_npm" install
-	ynh_exec_warn_less ynh_exec_as "$app" env "$ynh_node_load_PATH" "$ynh_npm" run package:discover
-	ynh_exec_warn_less ynh_exec_as "$app" env "$ynh_node_load_PATH" "$ynh_npm" run build
-	ynh_exec_warn_less ynh_exec_as "$app" env "$ynh_node_load_PATH" "$ynh_npm" install --save --production @osjs/pam-auth
+	ynh_hide_warnings ynh_exec_as_app npm install
+	ynh_hide_warnings ynh_exec_as_app npm run package:discover
+	ynh_hide_warnings ynh_exec_as_app npm run build
+	ynh_hide_warnings ynh_exec_as_app npm install --save --production @osjs/pam-auth
 popd
 
-ynh_replace_string --match_string="8000" --replace_string="$port" --target_file="$install_dir/src/server/config.js"
-
-chown -R "$app:$app" "$install_dir"
+ynh_replace --match="8000" --replace="$port" --file="$install_dir/src/server/config.js"
 
 #=================================================
 # SYSTEM CONFIGURATION
 #=================================================
-ynh_script_progression --message="Adding system configurations related to $app..." --weight=1
+ynh_script_progression "Adding system configurations related to $app..."
 
-ynh_add_nginx_config
+ynh_config_add_nginx
 
-ynh_add_systemd_config
+ynh_config_add_systemd
 yunohost service add "$app" --description="Desktop you have accesss through your browser" --log="/var/log/$app/$app.log"
 
-# Use logrotate to manage application logfile(s)
-ynh_use_logrotate
+ynh_config_add_logrotate
 
 #=================================================
 # START SYSTEMD SERVICE
 #=================================================
-ynh_script_progression --message="Starting a systemd service..."
+ynh_script_progression "Starting $app's systemd service..."
 
-# Start a systemd service
-ynh_systemd_action --service_name="$app" --action="start" --log_path="/var/log/$app/$app.log" --line_match="Server listening on"
+ynh_systemctl --service="$app" --action="start"  --wait_until="Server listening on"
 
 #=================================================
 # END OF SCRIPT
 #=================================================
 
-ynh_script_progression --message="Installation of $app completed"
+ynh_script_progression "Installation of $app completed"

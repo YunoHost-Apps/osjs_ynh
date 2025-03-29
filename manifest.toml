@@ -17,7 +17,8 @@ admindoc = "https://manual.os-js.org/"
 code = "https://github.com/os-js/OS.js"
 
 [integration]
-yunohost = ">= 11.2"
+yunohost = ">= 12.0.9"
+helpers_version = "2.1"
 architectures = "all"
 multi_instance = false
 
